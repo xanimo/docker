@@ -11,7 +11,7 @@ ARG RLS_LIB=gnu
 ENV RLS_FILE_NAME=dogecoin-${RLS_VERSION}-${RLS_ARCH}-${RLS_OS}-${RLS_LIB}.tar.gz
 
 ENV SIG_PATH=${RLS_VERSION}-${RLS_OS}
-ENV DESCRIPTOR_PATH=contrib/gitian-descriptors/gitian-${RLS_OS}.yml
+ENV DESCRIPTOR_PATH=gitian-${RLS_OS}.yml
 ENV PUBKEY_PATH=contrib/gitian-keys
 
 ENV REPO_GITIAN_BUILDER=https://github.com/devrandom/gitian-builder.git
@@ -28,17 +28,19 @@ RUN apt update && apt install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # fetch tools and setup signers
-RUN git clone ${REPO_GITIAN_BUILDER} gitian && \
-    git clone ${REPO_GITIAN_SIGS} sigs && \
-    git clone -b v${RLS_VERSION} ${REPO_DOGECOIN_CORE} dogecoin && \
-    find dogecoin/${PUBKEY_PATH} -name "*.pgp" |xargs -n 1 gpg --import
+RUN wget https://raw.githubusercontent.com/devrandom/gitian-builder/master/bin/gverify && \
+    chmod +x gverify && \
+    wget -O - https://github.com/dogecoin/gitian.sigs/archive/master.tar.gz | tar xz --strip=0 "gitian.sigs-master/${RLS_VERSION}-linux" && \
+    wget -O - https://github.com/dogecoin/dogecoin/archive/master.tar.gz | tar xz --strip=2 "dogecoin-master/contrib/gitian-keys" && \
+    wget https://raw.githubusercontent.com/dogecoin/dogecoin/v${RLS_VERSION}/contrib/gitian-descriptors/gitian-${RLS_OS}.yml && \
+    find gitian-keys -name "*.pgp" |xargs -n 1 gpg --import
 
 # download release binary and verify against random signer
 RUN wget https://github.com/dogecoin/dogecoin/releases/download/v${RLS_VERSION}/${RLS_FILE_NAME} && \
-    gitian/bin/gverify --no-markup -d sigs -r ${SIG_PATH} \
-      dogecoin/${DESCRIPTOR_PATH} | grep OK | \
+    ./gverify --no-markup -d gitian.sigs-master -r ${SIG_PATH} \
+      ${DESCRIPTOR_PATH} | grep OK | \
       shuf -n 1 | sed s/:.*// > random_signer.txt && \
-    grep ${RLS_FILE_NAME} sigs/${SIG_PATH}/$(cat random_signer.txt)/*assert | shasum -c && \
+    grep ${RLS_FILE_NAME} gitian.sigs-master/${SIG_PATH}/$(cat random_signer.txt)/*assert | shasum -c && \
     mv ${RLS_FILE_NAME} dogecoin.tar.gz
 
 FROM ubuntu:bionic AS final
