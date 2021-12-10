@@ -26,7 +26,7 @@ def test_entrypoint_executables(hook):
         "PATH" : os.environ["PATH"],
             }
 
-    ## Test basic command with `dogecoind`
+    ## Test basic command with `dogecoind`
     test_args = ["dogecoind"]
 
     result_args = [
@@ -37,7 +37,7 @@ def test_entrypoint_executables(hook):
     hook.test(test_args, test_environ, result_args, result_environ)
     assert hook.result == hook.reference, hook.error_msg()
     
-    ## Test empty command with `dogecoin-qt`
+    ## Test empty command with `dogecoin-qt`
     test_args = ["dogecoin-qt"]
 
     result_args = [
@@ -49,7 +49,7 @@ def test_entrypoint_executables(hook):
     hook.test(test_args, test_environ, result_args, result_environ)
     assert hook.result == hook.reference, hook.error_msg()
 
-    ## Test empty command with `dogecoin-cli`
+    ## Test empty command with `dogecoin-cli`
     test_args = ["dogecoin-cli"]
 
     result_args = [
@@ -60,7 +60,7 @@ def test_entrypoint_executables(hook):
     hook.test(test_args, test_environ, result_args, result_environ)
     assert hook.result == hook.reference, hook.error_msg()
 
-    ## Test basic command with `dogecoin-tx`
+    ## Test basic command with `dogecoin-tx`
     tx_result_env = {
         "USER" : "dogecoin",
         "PATH" : os.environ["PATH"],
