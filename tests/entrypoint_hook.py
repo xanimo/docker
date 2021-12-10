@@ -40,11 +40,12 @@ class Command:
 
 class EntrypointHook:
     """
-    Hook to perform test of the entrypoint.
+    Hook to perform test of the Dockerfile entrypoint.py. Manage all
+    informations about test input, test output and expected output.
 
-    Hook os.execve function to catch launched command.
-    Manage all information about test input, test output and
-    expected output.
+    Hook system calls os.execve, os.setuid & os.setgid used
+    by entrypoint. Catch execve arguments to perform comparaison tests,
+    disable setuid & setgid behavior.
     """
     def __init__(self):
         self._reset_attributes()
