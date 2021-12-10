@@ -41,16 +41,14 @@ class Command:
 class EntrypointHook:
     """
     Hook to perform test of the entrypoint.
-    
+
     Hook os.execve function to catch launched command.
     Manage all information about test input, test output and
     expected output.
     """
     def __init__(self):
         self._reset_attributes()
-
-        #Set up execve hook globally
-        os.execve = self._execve_hook
+        self._setup_hooks()
 
     def entrypoint(self, test_argv, test_environ):
         """
@@ -106,6 +104,26 @@ class EntrypointHook:
         self.result = None
         self.reference = None
         self.input = None
+
+    def _setup_hooks(self):
+        """Enable hooks of entrypoint.py system calls."""
+        #Save system functions to restore it
+        self._execve_backup = os.execve
+        self._setgid_backup = os.setgid
+        self._setuid_backup = os.setuid
+
+        #Add execve hook globally to catch entrypoint arguments
+        os.execve = self._execve_hook
+
+        #Disable setgid & setuid behavior
+        os.setgid = lambda _ : None
+        os.setuid = lambda _ : None
+
+    def _reset_hooks(self):
+        """Restore python system calls to default functions"""
+        os.execve = self._execve_backup
+        os.setgid = self._setgid_backup
+        os.setuid = self._setuid_backup
 
     def _diff(self):
         """Perform diff between test result and the expected result."""

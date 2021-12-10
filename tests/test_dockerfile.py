@@ -1,16 +1,15 @@
 import sys
 import os
 import pytest
-from entrypoint_hook import EntrypointHook, CommandNotFound
+from entrypoint_hook import CommandNotFound
 
 EXECUTABLES_FOLDER = "/usr/local/bin/"
-HOOK = EntrypointHook()
 
 def abs_path(executable):
     """Build manually (expected) executable absolute path"""
     return os.path.join(EXECUTABLES_FOLDER, executable)
 
-def test_entrypoint_executables():
+def test_entrypoint_executables(hook):
     """
     Basic test without configuration to check
     if entrypoint run each dogecoin executables.
@@ -35,8 +34,8 @@ def test_entrypoint_executables():
             "-datadir=/dogecoin/.dogecoin",
             "-printtoconsole",
             ]
-    HOOK.test(test_args, test_environ, result_args, result_environ)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_environ, result_args, result_environ)
+    assert hook.result == hook.reference, hook.error_msg()
     
     ## Test empty command with `dogecoin-qt`
     test_args = ["dogecoin-qt"]
@@ -47,8 +46,8 @@ def test_entrypoint_executables():
             "-printtoconsole",
             ]
 
-    HOOK.test(test_args, test_environ, result_args, result_environ)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_environ, result_args, result_environ)
+    assert hook.result == hook.reference, hook.error_msg()
 
     ## Test empty command with `dogecoin-cli`
     test_args = ["dogecoin-cli"]
@@ -58,8 +57,8 @@ def test_entrypoint_executables():
             "-datadir=/dogecoin/.dogecoin",
             ]
 
-    HOOK.test(test_args, test_environ, result_args, result_environ)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_environ, result_args, result_environ)
+    assert hook.result == hook.reference, hook.error_msg()
 
     ## Test basic command with `dogecoin-tx`
     tx_result_env = {
@@ -73,16 +72,16 @@ def test_entrypoint_executables():
     result_args = [
             abs_path("dogecoin-tx"),
             ]
-    HOOK.test(test_args, test_environ, result_args, tx_result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_environ, result_args, tx_result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
-def test_invalid_command():
+def test_invalid_command(hook):
     test_args = ["dogecoindx"]
 
     with pytest.raises(CommandNotFound):
-        HOOK.entrypoint(test_args, os.environ)
+        hook.entrypoint(test_args, os.environ)
 
-def test_environ():
+def test_environ(hook):
     """
     Verify if environment is converted to arguments,
     control that arguments are removed from the environment.
@@ -108,8 +107,8 @@ def test_environ():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
     #Control environment variables with empty values
     test_env = {
@@ -131,10 +130,10 @@ def test_environ():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
-def test_arguments():
+def test_arguments(hook):
     """Verifying arguments are being kept appropriatly"""
     #Verify arguments with values
     test_args = ["dogecoind", "-maxconnections=150", "-paytxfee=0.01"]
@@ -155,8 +154,8 @@ def test_arguments():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
     #Verify arguments without values
     test_args = ["dogecoind", "-daemon", "-testnet"]
@@ -177,8 +176,8 @@ def test_arguments():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
     #Mixing arguments with and without values
     test_args = ["dogecoind", "-daemon", "-maxconnections=150"]
@@ -199,10 +198,10 @@ def test_arguments():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
-def test_arguments_double_dash():
+def test_arguments_double_dash(hook):
     """Check arguments formates with double-dash like `--testnet`"""
     test_args = ["dogecoind", "--maxconnections=150", "--paytxfee=0.01"]
     test_env = {
@@ -222,10 +221,10 @@ def test_arguments_double_dash():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
-def test_mixing_argument_and_env():
+def test_mixing_argument_and_env(hook):
     """Configure container with arguments and environment variables"""
     test_args = ["dogecoind", "-maxconnections=150", "-daemon"]
     test_env = {
@@ -247,10 +246,10 @@ def test_mixing_argument_and_env():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
-def test_equal_argv_and_env():
+def test_equal_argv_and_env(hook):
     """Check arguments and environment with identical variables"""
     test_args = ["dogecoind", "-maxconnections=150", "-daemon"]
     test_env = {
@@ -274,8 +273,8 @@ def test_equal_argv_and_env():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
     #Same variable with different value for env & arguments.
     test_args = ["dogecoind", "-maxconnections=130", "-daemon"]
@@ -300,10 +299,10 @@ def test_equal_argv_and_env():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
-def test_help_debug():
+def test_help_debug(hook):
     """
     Test option with dash like `-help-debug` if working
     properly in environment.
@@ -326,8 +325,8 @@ def test_help_debug():
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
             }
-    HOOK.test(test_args, test_env, result_args, result_env)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_env, result_args, result_env)
+    assert hook.result == hook.reference, hook.error_msg()
 
 def test_files_metadata(host):
     """Verify all image files generated by the Dockerfile"""
@@ -356,7 +355,7 @@ def test_files_metadata(host):
     assert entrypoint_script.group == "root"
     assert entrypoint_script.mode == 0o500
 
-def test_datadir(host):
+def test_datadir(hook, host):
     """
     Verify if datadir can be changed and created proprely.
 
@@ -383,8 +382,8 @@ def test_datadir(host):
             }
 
     #Run test to generate datadir
-    HOOK.test(test_args, test_environ, result_args, result_environ)
-    assert HOOK.result == HOOK.reference, HOOK.error_msg()
+    hook.test(test_args, test_environ, result_args, result_environ)
+    assert hook.result == hook.reference, hook.error_msg()
 
     #Test datadir metadata
     datadir_folder = host.file(test_datadir)
