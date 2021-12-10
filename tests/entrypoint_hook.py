@@ -26,7 +26,7 @@ class Command:
         """Compare 2 Command, result of a test and expected command."""
         return self.argv == other.argv and self.environ == other.environ
 
-    def stringify(self):
+    def __str__(self):
         """Render single command into string for error outputs."""
         argv_str = json.dumps(self.argv, indent=4)
         command_str = f"argv: {argv_str}\n"
@@ -34,9 +34,13 @@ class Command:
         command_str += f"environ: {environ_str}"
         return command_str
 
-    def __repr__(self):
-        """Override pytest assert message error"""
-        return "<420UselessMessage420>"
+    def diff(self, other):
+        """Perform diff between result command and expected command."""
+        command = str(self).splitlines()
+        other_command = str(other).splitlines()
+
+        return difflib.unified_diff(command, other_command,
+                fromfile="result", tofile="expected", lineterm="")
 
 class EntrypointHook:
     """
@@ -60,7 +64,6 @@ class EntrypointHook:
         """
         #Clean hook from previous test, store the command to test.
         self._reset_attributes()
-        self.input = Command(test_argv, test_environ)
 
         #Manage system arguments & environment used by the script
         sys.argv[1:] = test_argv.copy()
@@ -81,18 +84,6 @@ class EntrypointHook:
         self.entrypoint(test_argv, test_environ)
         self.reference = Command(result_argv, result_environ)
 
-    def error_msg(self):
-        """Error message to display on assert failure"""
-        msg = "\n======= Input ======= \n"
-        msg += self.input.stringify() + "\n"
-        msg += "\n======= Result ======= \n"
-        msg += self.result.stringify() + "\n"
-        msg += "======= Expected ======= \n"
-        msg += self.reference.stringify()
-        msg += "======= Diff ======= \n"
-        msg += self._diff()
-        return msg
-
     def _execve_hook(self, executable, argv, environ):
         """
         Hook for os.execve function, to catch arguments/environment
@@ -104,7 +95,6 @@ class EntrypointHook:
         """Clean state between each test"""
         self.result = None
         self.reference = None
-        self.input = None
 
     def _setup_hooks(self):
         """Enable hooks of entrypoint.py system calls."""
@@ -125,15 +115,3 @@ class EntrypointHook:
         os.execve = self._execve_backup
         os.setgid = self._setgid_backup
         os.setuid = self._setuid_backup
-
-    def _diff(self):
-        """Perform diff between test result and the expected result."""
-        diff_tool = difflib.Differ()
-        result_content = self.result.stringify().splitlines()
-        reference_content = self.reference.stringify().splitlines()
-        result = diff_tool.compare(result_content, reference_content)
-        return "\n".join(result)
-
-    def __repr__(self):
-        """Override pytest assert message error"""
-        return "<69UselessMessage69>"
