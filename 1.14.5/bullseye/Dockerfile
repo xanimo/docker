@@ -67,7 +67,7 @@ RUN useradd ${USER} --home-dir ${HOME}
 
 # Dependencies install
 RUN apt update && apt install -y \
-    python3 \
+    python3-minimal \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /tmp
