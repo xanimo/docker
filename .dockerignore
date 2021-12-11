@@ -1,0 +1,7 @@
+.git
+.github
+.gitignore
+.cache
+1.14.5/
+tests/
+tools/
