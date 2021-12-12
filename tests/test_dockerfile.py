@@ -5,6 +5,12 @@ import pytest
 from entrypoint_hook import CommandNotFound
 
 EXECUTABLES_FOLDER = "/usr/local/bin/"
+
+#Set tests user and directories
+TEST_USER = os.environ.get("TEST_USER", None)
+if TEST_USER is None:
+    TEST_USER = "dogecoin"
+
 TEST_DIRECTORY = tempfile.TemporaryDirectory()
 TEST_DATADIR = TEST_DIRECTORY.name
 
@@ -20,12 +26,12 @@ def test_entrypoint_executables(hook):
     ## Constant variable for test
     test_environ = {
         "DATADIR" : TEST_DATADIR,
-        "USER" : "dogecoin",
+        "USER" : TEST_USER,
         "PATH" : os.environ["PATH"],
             }
 
     result_environ = {
-        "USER" : "dogecoin",
+        "USER" : TEST_USER,
         "PATH" : os.environ["PATH"],
             }
 
@@ -53,7 +59,7 @@ def test_entrypoint_executables(hook):
 
     ## Test basic command with `dogecoin-tx`
     tx_result_env = {
-        "USER" : "dogecoin",
+        "USER" : TEST_USER,
         "PATH" : os.environ["PATH"],
         "DATADIR" : TEST_DATADIR,
             }
@@ -80,7 +86,7 @@ def test_environ(hook):
     #Control environment variables with values
     test_args = ["dogecoind"]
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             "MAXCONNECTIONS" : "150",
@@ -95,7 +101,7 @@ def test_environ(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -103,7 +109,7 @@ def test_environ(hook):
 
     #Control environment variables with empty values
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             "TESTNET" : "",
@@ -118,7 +124,7 @@ def test_environ(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -129,7 +135,7 @@ def test_arguments(hook):
     #Verify arguments with values
     test_args = ["dogecoind", "-maxconnections=150", "-paytxfee=0.01"]
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             }
@@ -142,7 +148,7 @@ def test_arguments(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -151,7 +157,7 @@ def test_arguments(hook):
     #Verify arguments without values
     test_args = ["dogecoind", "-daemon", "-testnet"]
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             }
@@ -164,7 +170,7 @@ def test_arguments(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -173,7 +179,7 @@ def test_arguments(hook):
     #Mixing arguments with and without values
     test_args = ["dogecoind", "-daemon", "-maxconnections=150"]
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             }
@@ -186,7 +192,7 @@ def test_arguments(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -196,7 +202,7 @@ def test_arguments_double_dash(hook):
     """Check arguments formates with double-dash like `--testnet`"""
     test_args = ["dogecoind", "--maxconnections=150", "--paytxfee=0.01"]
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             }
@@ -209,7 +215,7 @@ def test_arguments_double_dash(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -219,7 +225,7 @@ def test_mixing_argument_and_env(hook):
     """Configure container with arguments and environment variables"""
     test_args = ["dogecoind", "-maxconnections=150", "-daemon"]
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             "TESTNET" : "",
@@ -234,7 +240,7 @@ def test_mixing_argument_and_env(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -244,7 +250,7 @@ def test_equal_argv_and_env(hook):
     """Check arguments and environment with identical variables"""
     test_args = ["dogecoind", "-maxconnections=150", "-daemon"]
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             "MAXCONNECTIONS" : "150",
@@ -261,7 +267,7 @@ def test_equal_argv_and_env(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -270,7 +276,7 @@ def test_equal_argv_and_env(hook):
     #Same variable with different value for env & arguments.
     test_args = ["dogecoind", "-maxconnections=130", "-daemon"]
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             "MAXCONNECTIONS" : "150",
@@ -287,7 +293,7 @@ def test_equal_argv_and_env(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -300,7 +306,7 @@ def test_help_debug(hook):
     """
     test_args = ["dogecoind"]
     test_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             "DATADIR" : TEST_DATADIR,
             "HELP_DEBUG" : "",
@@ -313,7 +319,7 @@ def test_help_debug(hook):
             "-printtoconsole",
             ]
     result_env = {
-            "USER" : "dogecoin",
+            "USER" : TEST_USER,
             "PATH" : os.environ['PATH'],
             }
     hook.test(test_args, test_env, result_args, result_env)
@@ -331,7 +337,7 @@ def test_datadir(hook, host):
 
     test_args = ["dogecoind", datadir_argument]
     test_environ = {
-        "USER" : "dogecoin",
+        "USER" : TEST_USER,
         "PATH" : os.environ["PATH"],
             }
 
@@ -341,7 +347,7 @@ def test_datadir(hook, host):
             "-printtoconsole",
             ]
     result_environ = {
-        "USER" : "dogecoin",
+        "USER" : TEST_USER,
         "PATH" : os.environ["PATH"],
             }
 
@@ -351,6 +357,6 @@ def test_datadir(hook, host):
 
     #Test datadir metadata
     datadir_folder = host.file(test_datadir)
-    assert datadir_folder.user == "dogecoin"
-    assert datadir_folder.group == "dogecoin"
+    assert datadir_folder.user == TEST_USER
+    assert datadir_folder.group == TEST_USER
     assert datadir_folder.mode == 0o755
