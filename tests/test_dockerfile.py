@@ -36,18 +36,6 @@ def test_entrypoint_executables(hook):
             ]
     hook.test(test_args, test_environ, result_args, result_environ)
     assert hook.result == hook.reference
-    
-    ## Test empty command with `dogecoin-qt`
-    test_args = ["dogecoin-qt"]
-
-    result_args = [
-            abs_path("dogecoin-qt"),
-            "-datadir=/dogecoin/.dogecoin",
-            "-printtoconsole",
-            ]
-
-    hook.test(test_args, test_environ, result_args, result_environ)
-    assert hook.result == hook.reference
 
     ## Test empty command with `dogecoin-cli`
     test_args = ["dogecoin-cli"]
