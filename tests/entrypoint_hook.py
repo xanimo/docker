@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import difflib
+import shutil
 import entrypoint
 import menu_hooks
 
@@ -111,6 +112,7 @@ class EntrypointHook:
         self._execve_backup = os.execve
         self._setgid_backup = os.setgid
         self._setuid_backup = os.setuid
+        self._which_backup = shutil.which
         self._get_help_backup = entrypoint.get_help
 
         #Add execve hook globally to catch entrypoint arguments
@@ -121,9 +123,12 @@ class EntrypointHook:
         #Disable setgid & setuid behavior
         os.setgid = lambda _ : None
         os.setuid = lambda _ : None
+        shutil.which = lambda executable : f"/usr/local/bin/{executable}"
 
     def _reset_hooks(self):
         """Restore python system calls to default functions"""
         os.execve = self._execve_backup
         os.setgid = self._setgid_backup
         os.setuid = self._setuid_backup
+        shutil.which = self._which_backup
+        entrypoint.get_help = self._get_help_backup
