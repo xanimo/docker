@@ -1,9 +1,12 @@
 import sys
 import os
+import tempfile
 import pytest
 from entrypoint_hook import CommandNotFound
 
 EXECUTABLES_FOLDER = "/usr/local/bin/"
+TEST_DIRECTORY = tempfile.TemporaryDirectory()
+TEST_DATADIR = TEST_DIRECTORY.name
 
 def abs_path(executable):
     """Build manually (expected) executable absolute path"""
@@ -16,7 +19,7 @@ def test_entrypoint_executables(hook):
     """
     ## Constant variable for test
     test_environ = {
-        "DATADIR" : "/dogecoin/.dogecoin",
+        "DATADIR" : TEST_DATADIR,
         "USER" : "dogecoin",
         "PATH" : os.environ["PATH"],
             }
@@ -31,7 +34,7 @@ def test_entrypoint_executables(hook):
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-printtoconsole",
             ]
     hook.test(test_args, test_environ, result_args, result_environ)
@@ -42,7 +45,7 @@ def test_entrypoint_executables(hook):
 
     result_args = [
             abs_path("dogecoin-cli"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             ]
 
     hook.test(test_args, test_environ, result_args, result_environ)
@@ -52,7 +55,7 @@ def test_entrypoint_executables(hook):
     tx_result_env = {
         "USER" : "dogecoin",
         "PATH" : os.environ["PATH"],
-        "DATADIR" : "/dogecoin/.dogecoin",
+        "DATADIR" : TEST_DATADIR,
             }
 
     test_args = ["dogecoin-tx"]
@@ -79,14 +82,14 @@ def test_environ(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             "MAXCONNECTIONS" : "150",
             "PAYTXFEE" : "0.01"
             }
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-paytxfee=0.01",
             "-maxconnections=150",
             "-printtoconsole",
@@ -102,7 +105,7 @@ def test_environ(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             "TESTNET" : "",
             "DAEMON" : "",
             }
@@ -110,7 +113,7 @@ def test_environ(hook):
     result_args = [
             abs_path("dogecoind"),
             "-daemon",
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-testnet",
             "-printtoconsole",
             ]
@@ -128,12 +131,12 @@ def test_arguments(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             }
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-maxconnections=150",
             "-paytxfee=0.01",
             "-printtoconsole",
@@ -150,12 +153,12 @@ def test_arguments(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             }
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-daemon",
             "-testnet",
             "-printtoconsole",
@@ -172,12 +175,12 @@ def test_arguments(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             }
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-daemon",
             "-maxconnections=150",
             "-printtoconsole",
@@ -195,12 +198,12 @@ def test_arguments_double_dash(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             }
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "--maxconnections=150",
             "--paytxfee=0.01",
             "-printtoconsole",
@@ -218,13 +221,13 @@ def test_mixing_argument_and_env(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             "TESTNET" : "",
             }
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-maxconnections=150",
             "-daemon",
             "-testnet",
@@ -243,14 +246,14 @@ def test_equal_argv_and_env(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             "MAXCONNECTIONS" : "150",
             "DAEMON" : "",
             }
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-maxconnections=150",
             "-maxconnections=150",
             "-daemon",
@@ -269,14 +272,14 @@ def test_equal_argv_and_env(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             "MAXCONNECTIONS" : "150",
             "DAEMON" : "1",
             }
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-maxconnections=130",
             "-maxconnections=150",
             "-daemon",
@@ -299,13 +302,13 @@ def test_help_debug(hook):
     test_env = {
             "USER" : "dogecoin",
             "PATH" : os.environ['PATH'],
-            "DATADIR" : "/dogecoin/.dogecoin",
+            "DATADIR" : TEST_DATADIR,
             "HELP_DEBUG" : "",
             }
 
     result_args = [
             abs_path("dogecoind"),
-            "-datadir=/dogecoin/.dogecoin",
+            f"-datadir={TEST_DATADIR}",
             "-help-debug",
             "-printtoconsole",
             ]
