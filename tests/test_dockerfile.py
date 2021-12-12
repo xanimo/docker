@@ -72,12 +72,6 @@ def test_entrypoint_executables(hook):
     hook.test(test_args, test_environ, result_args, tx_result_env)
     assert hook.result == hook.reference
 
-def test_invalid_command(hook):
-    test_args = ["dogecoindx"]
-
-    with pytest.raises(CommandNotFound):
-        hook.entrypoint(test_args, os.environ)
-
 def test_environ(hook):
     """
     Verify if environment is converted to arguments,
