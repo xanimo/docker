@@ -28,7 +28,8 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Build a Docker image
-      run: docker build -t xanimo/1.14.5-dogecoin:snyk . -f 1.14.5/bullseye/Dockerfile
+      working-directory: 1.14.5/bullseye/
+      run: docker build -t xanimo/1.14.5-dogecoin:snyk .
     - name: Run Snyk to check Docker image for vulnerabilities
       # Snyk can be used to break the build when it detects vulnerabilities.
       # In this case we want to upload the issues to GitHub Code Scanning
@@ -41,7 +42,6 @@ jobs:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         image: xanimo/1.14.5-dogecoin:snyk
-        args: --file=**/Dockerfile
     - name: Upload result to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v1
       with:
