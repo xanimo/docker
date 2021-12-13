@@ -41,8 +41,4 @@ jobs:
         # or you can signup for free at https://snyk.io/login
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
-        image: xanimo/1.14.5-dogecoin:snyk
-    - name: Upload result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@v1
-      with:
-        sarif_file: snyk.json
+        image: xanimo/1.14.5-dogecoin:snykx
