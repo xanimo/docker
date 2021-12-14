@@ -64,27 +64,29 @@ COPY entrypoint.py /entrypoint.py
 
 FROM debian:bullseye-slim AS final
 
-ENV USER=nobody
-ENV GROUP=nogroup
+ARG USER=dogecoin
+ENV USER=${USER}
 ENV DATADIR=/${USER}/.dogecoin
 
 # Root configuration to mimic user
 ENV HOME=/${USER}
 
-RUN mkdir -p ${DATADIR} \
-    && chown ${USER}:${GROUP} ${DATADIR}
+RUN useradd -r -U ${USER} --home-dir ${HOME} \
+    && mkdir -p ${DATADIR} \
+    && chown ${USER}:${USER} ${DATADIR}
 
 WORKDIR ${HOME}
 # Copy the downloaded binaries and man pages into the container system from the verify stage.
 # Setuid on binaries with $USER rights, to limit root usage.
-COPY --from=verify --chown=${USER}:${GROUP} \
+COPY --from=verify \
     /verify/bin/dogecoind \
     /verify/bin/dogecoin-cli \
     /verify/bin/dogecoin-tx \
     /entrypoint.py /usr/local/bin/
 
 # Set permissions on copied files
-RUN chmod 4555 /usr/local/bin/dogecoin* \
+RUN chown ${USER}:${USER} /usr/local/bin/entrypoint.py \
+    && chmod +x /usr/local/bin/dogecoin* \
     && chmod 500 /usr/local/bin/entrypoint.py
 
 # P2P network (mainnet, testnet & regnet respectively)
@@ -100,5 +102,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     python3 \
     && rm -rf /var/lib/apt/lists/*
 
+USER ${USER}
 ENTRYPOINT ["entrypoint.py"]
 CMD ["dogecoind"]

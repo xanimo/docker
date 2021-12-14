@@ -2,9 +2,7 @@
 """
   Docker entrypoint for Dogecoin Core
 """
-import argparse
 import os
-import pwd
 import shutil
 import sys
 import subprocess
@@ -67,25 +65,6 @@ def executable_options(executable):
 
     return options
 
-def create_datadir():
-    """
-    Create data directory used by dogecoin daemon.
-
-    Create manually the directory while root at container creation,
-    root rights needed to create folder with host volume.
-    """
-    #Try to get datadir from argv
-    parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("-datadir", "--datadir")
-    argv, _ = parser.parse_known_args()
-
-    #Try to get datadir from environment
-    datadir = argv.datadir or os.environ.get("DATADIR")
-
-    os.makedirs(datadir, exist_ok=True)
-
-    subprocess.run(["chown", "-R", "nobody:nogroup", datadir], check=True)
-
 def convert_env(executable):
     """
     Convert existing environment variables into command line arguments,
@@ -128,12 +107,6 @@ def run_executable(executable, executable_args):
     if executable == "dogecoind":
         executable_args.append("-printtoconsole")
 
-    #Switch process from root to user.
-    #Equivalent to use gosu or su-exec
-    user_info = pwd.getpwnam('nobody')
-    os.setgid(user_info.pw_gid)
-    os.setuid(user_info.pw_uid)
-
     #Run container command
     return execute(executable, executable_args)
 
@@ -149,8 +122,6 @@ def main():
     #Container running arbitrary commands unrelated to dogecoin
     if executable not in CLI_EXECUTABLES:
         return execute(executable, sys.argv[1:])
-
-    create_datadir()
 
     executable_args = convert_env(executable)
     executable_args += sys.argv[1:]
