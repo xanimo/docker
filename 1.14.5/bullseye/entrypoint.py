@@ -84,8 +84,7 @@ def create_datadir():
 
     os.makedirs(datadir, exist_ok=True)
 
-    user = os.environ["USER"]
-    subprocess.run(["chown", "-R", f"{user}:{user}", datadir], check=True)
+    subprocess.run(["chown", "-R", "nobody:nogroup", datadir], check=True)
 
 def convert_env(executable):
     """
@@ -131,7 +130,7 @@ def run_executable(executable, executable_args):
 
     #Switch process from root to user.
     #Equivalent to use gosu or su-exec
-    user_info = pwd.getpwnam(os.environ['USER'])
+    user_info = pwd.getpwnam('nobody')
     os.setgid(user_info.pw_gid)
     os.setuid(user_info.pw_uid)
 

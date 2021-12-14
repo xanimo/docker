@@ -25,7 +25,7 @@ ARG DESCRIPTOR_PATH=dogecoin/contrib/gitian-descriptors/gitian-${RLS_OS}.yml
 ARG RLS_LOCATION=https://github.com/dogecoin/dogecoin/releases/download/v${RLS_VERSION}
 
 # install system requirements
-RUN apt update && apt install --no-install-recommends -y \
+RUN apt-get update && apt-get install --no-install-recommends -y \
     wget \
     git \
     ruby \
@@ -34,7 +34,8 @@ RUN apt update && apt install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 
 # fetch tools and setup signers
-RUN git clone --depth 1 ${REPO_GITIAN_BUILDER} gitian \
+RUN bash -o pipefail \
+    && git clone --depth 1 ${REPO_GITIAN_BUILDER} gitian \
     && git clone --depth 1 ${REPO_GITIAN_SIGS} sigs \
     && git clone --depth 1 -b v${RLS_VERSION} ${REPO_DOGECOIN_CORE} dogecoin \
     && find dogecoin/contrib/gitian-keys -name "*.pgp" |xargs -n 1 gpg --import
@@ -63,18 +64,20 @@ COPY entrypoint.py /entrypoint.py
 
 FROM debian:bullseye-slim AS final
 
-ENV USER=dogecoin
+ENV USER=nobody
+ENV GROUP=nogroup
 ENV DATADIR=/${USER}/.dogecoin
 
 # Root configuration to mimic user
 ENV HOME=/${USER}
 
-RUN useradd ${USER} --home-dir ${HOME}
+RUN mkdir -p ${DATADIR} \
+    && chown ${USER}:${GROUP} ${DATADIR}
 
 WORKDIR ${HOME}
 # Copy the downloaded binaries and man pages into the container system from the verify stage.
 # Setuid on binaries with $USER rights, to limit root usage.
-COPY --from=verify --chown=${USER}:${USER} \
+COPY --from=verify --chown=${USER}:${GROUP} \
     /verify/bin/dogecoind \
     /verify/bin/dogecoin-cli \
     /verify/bin/dogecoin-tx \
@@ -90,10 +93,10 @@ EXPOSE 22556 44556 18444
 # RPC interface (mainnet, testnet & regnet respectively)
 EXPOSE 22555 44555 18332
 
-VOLUME ["/dogecoin/.dogecoin"]
+VOLUME ["/${USER}/.dogecoin"]
 
 # Dependencies install
-RUN apt update && apt install --no-install-recommends -y \
+RUN apt-get update && apt-get install --no-install-recommends -y \
     python3 \
     && rm -rf /var/lib/apt/lists/*
 
