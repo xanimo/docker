@@ -66,14 +66,15 @@ FROM debian:bullseye-slim AS final
 
 ARG USER=dogecoin
 ENV USER=${USER}
-ENV DATADIR=/${USER}/.dogecoin
+ENV DATADIR=/home/${USER}/.dogecoin
 
 RUN shuf -i 60000-64999 -n 1 > id.txt \
     && useradd -m -u $(cat id.txt) -U ${USER} \
     && mkdir -p ${DATADIR} \
-    && chown -R ${USER}:${USER} ${DATADIR}
+    && chown -R ${USER}:${USER} ${DATADIR} \
+    && rm id.txt
 
-WORKDIR ${HOME}
+WORKDIR /home/${USER}
 # Copy the downloaded binaries and man pages into the container system from the verify stage.
 # Setuid on binaries with $USER rights, to limit root usage.
 COPY --from=verify \
@@ -91,7 +92,7 @@ EXPOSE 22556 44556 18444
 # RPC interface (mainnet, testnet & regnet respectively)
 EXPOSE 22555 44555 18332
 
-VOLUME ["/${USER}/.dogecoin"]
+VOLUME ["${DATADIR}"]
 
 # Dependencies install
 RUN apt-get update && apt-get install --no-install-recommends -y \
