@@ -68,12 +68,10 @@ ARG USER=dogecoin
 ENV USER=${USER}
 ENV DATADIR=/${USER}/.dogecoin
 
-# Root configuration to mimic user
-ENV HOME=/${USER}
-
-RUN useradd -r -U ${USER} --home-dir ${HOME} \
+RUN shuf -i 60000-64999 -n 1 > id.txt \
+    && useradd -m -u $(cat id.txt) -U ${USER} \
     && mkdir -p ${DATADIR} \
-    && chown ${USER}:${USER} ${DATADIR}
+    && chown -R ${USER}:${USER} ${DATADIR}
 
 WORKDIR ${HOME}
 # Copy the downloaded binaries and man pages into the container system from the verify stage.
@@ -85,9 +83,7 @@ COPY --from=verify \
     /entrypoint.py /usr/local/bin/
 
 # Set permissions on copied files
-RUN chown ${USER}:${USER} /usr/local/bin/entrypoint.py \
-    && chmod +x /usr/local/bin/dogecoin* \
-    && chmod 500 /usr/local/bin/entrypoint.py
+RUN chmod +x /usr/local/bin/*
 
 # P2P network (mainnet, testnet & regnet respectively)
 EXPOSE 22556 44556 18444
