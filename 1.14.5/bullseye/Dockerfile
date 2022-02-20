@@ -64,15 +64,24 @@ COPY entrypoint.py /entrypoint.py
 
 FROM debian:bullseye-slim AS final
 
-ARG USER=dogecoin
+ARG USER=
 ENV USER=${USER}
-ENV DATADIR=/$USER/.dogecoin
+ARG APP_UID=
+ENV APP_UID=${APP_UID}
+ARG APP_GID=
+ENV APP_GID=${APP_GID}
+ENV DATADIR=/${USER}/.dogecoin
 
-RUN useradd -m ${USER} \
+# RUN echo ${USER} ${APP_UID} ${APP_GID} && exit 1
+
+RUN groupadd ${USER} -g ${APP_GID} \
+    && useradd -m ${USER} -g ${APP_GID} --uid ${APP_UID} \
     && mkdir -p ${DATADIR} \
-    && chmod -R 1077 ${DATADIR}
+    && chown -R ${APP_UID}:${APP_GID} ${DATADIR} \
+    && chmod -R 1007 ${DATADIR}
 
 WORKDIR /home/${USER}
+
 # Copy the downloaded binaries into the container system from the verify stage.
 COPY --from=verify \
     /verify/bin/dogecoind \
@@ -81,7 +90,7 @@ COPY --from=verify \
     /entrypoint.py /usr/local/bin/
 
 # Set permissions on copied files
-RUN chmod +x /usr/local/bin/*
+RUN chmod g+x /usr/local/bin/*
 
 # P2P network (mainnet, testnet & regnet respectively)
 EXPOSE 22556 44556 18444
@@ -97,5 +106,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 
 USER ${USER}
+
 ENTRYPOINT ["entrypoint.py"]
+
 CMD ["dogecoind"]
