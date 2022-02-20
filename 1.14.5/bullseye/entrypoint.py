@@ -4,7 +4,7 @@
 """
 import argparse
 import os
-import pwd
+# import pwd
 import shutil
 import sys
 import subprocess
@@ -66,7 +66,7 @@ def executable_options(executable):
         options.append(cleaned_option)
 
     return options
-    
+
 def create_datadir():
     """
     Create data directory used by dogecoin daemon.
@@ -82,14 +82,13 @@ def create_datadir():
     datadir = argv.datadir or os.environ.get("DATADIR")
     print(datadir)
     print(argv.datadir)
-    print(os.environ.get["DATADIR"])
     os.makedirs(datadir, exist_ok=True)
 
     app_uid = os.environ["APP_UID"]
     app_gid = os.environ["APP_GID"]
     user = os.environ["USER"]
-    # subprocess.run(["chmod", "-R", "700", datadir], check=True)
-    subprocess.run(["chown", "-R", f"{app_uid}:{app_gid}", "/${USER}/.dogecoin"], check=True)
+    subprocess.run(["chmod", "-R", "1700", datadir], check=True)
+    subprocess.run(["chown", "-R", f"{app_uid}:{app_gid}", f"/home/{user}/.dogecoin"], check=True)
 
 def convert_env(executable):
     """
@@ -132,12 +131,12 @@ def run_executable(executable, executable_args):
     """
     if executable == "dogecoind":
         executable_args.append("-printtoconsole")
-        
+
     #Switch process from root to user.
     #Equivalent to use gosu or su-exec
-    user_info = pwd.getpwnam(os.environ['USER'])
-    os.setgid(user_info.pw_gid)
-    os.setuid(user_info.pw_uid)
+    # user_info = pwd.getpwnam(os.environ['USER'])
+    # os.setgid(user_info.pw_gid)
+    # os.setuid(user_info.pw_uid)
 
     #Run container command
     return execute(executable, executable_args)
@@ -146,7 +145,6 @@ def main():
     """
     Main routine
     """
-    create_datadir()
 
     if sys.argv[1].startswith("-"):
         executable = "dogecoind"
@@ -156,6 +154,8 @@ def main():
     #Container running arbitrary commands unrelated to dogecoin
     if executable not in CLI_EXECUTABLES:
         return execute(executable, sys.argv[1:])
+
+    create_datadir()
 
     executable_args = convert_env(executable)
     executable_args += sys.argv[1:]

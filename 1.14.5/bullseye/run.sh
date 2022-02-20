@@ -1,2 +1,3 @@
 #!/bin/bash
-docker run -u $1:$2 -it --rm -e APP_UID=$1 -e APP_GID=$2 --name dogecoin xanimo/1.14-5-dogecoin:modify-chown --regtest
+
+docker run -d -e APP_UID=$APP_UID -e APP_GID=$APP_GID -u $APP_UID:$APP_GID -it --rm --name dogecoin xanimo/1.14.5-dogecoin:modify-chown --regtest

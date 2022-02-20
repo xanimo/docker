@@ -70,13 +70,15 @@ ARG APP_UID=
 ENV APP_UID=${APP_UID}
 ARG APP_GID=
 ENV APP_GID=${APP_GID}
-ENV DATADIR=/${USER}/.dogecoin
+ENV DATADIR=/home/${USER}/.dogecoin
 
 # RUN echo ${USER} ${APP_UID} ${APP_GID} && exit 1
 
-RUN groupadd ${USER} -g ${APP_GID} \
-    && useradd -m ${USER} -g ${APP_GID} --uid ${APP_UID} \
+RUN echo ${USER} ${APP_UID} ${APP_GID} \
+    && groupadd -g ${APP_GID} ${USER} \
+    && useradd -m --uid ${APP_UID} ${USER} -g ${APP_GID} \
     && mkdir -p ${DATADIR} \
+    && chgrp -R ${APP_GID} ${DATADIR} \
     && chown -R ${APP_UID}:${APP_GID} ${DATADIR} \
     && chmod -R 1007 ${DATADIR}
 
@@ -86,8 +88,9 @@ WORKDIR /home/${USER}
 COPY --from=verify \
     /verify/bin/dogecoind \
     /verify/bin/dogecoin-cli \
-    /verify/bin/dogecoin-tx \
-    /entrypoint.py /usr/local/bin/
+    /verify/bin/dogecoin-tx /usr/local/bin/
+
+COPY /entrypoint.py /usr/local/bin/
 
 # Set permissions on copied files
 RUN chmod g+x /usr/local/bin/*
@@ -105,7 +108,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     python3 \
     && rm -rf /var/lib/apt/lists/*
 
-USER ${USER}
+USER ${APP_UID}:${APP_GID}
 
 ENTRYPOINT ["entrypoint.py"]
 
