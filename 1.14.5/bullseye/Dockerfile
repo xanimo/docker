@@ -57,6 +57,7 @@ RUN set -ex && ARCHITECTURE=$(dpkg --print-architecture) \
 
 FROM debian:11.6-slim AS final
 
+
 ENV USER=dogecoin
 ENV DATADIR=/${USER}/.dogecoin
 
