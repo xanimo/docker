@@ -53,7 +53,13 @@ RUN set -ex && ARCHITECTURE=$(dpkg --print-architecture) \
        | grep OK | shuf -n 1 | sed s/:.*// > random_signer.txt \
     && grep ${RLS_FILE_NAME} sigs/${SIG_PATH}/$(cat random_signer.txt)/*assert | sha256sum -c \
     && grep ${RLS_FILE_NAME} SHASUMS | sha256sum -c \
-    && mv ${RLS_FILE_NAME} dogecoin.tar.gz
+    && tar -zxvf ${RLS_FILE_NAME} \
+        dogecoin-${RLS_VERSION}/bin/dogecoind \
+        dogecoin-${RLS_VERSION}/bin/dogecoin-cli \
+        dogecoin-${RLS_VERSION}/bin/dogecoin-tx \
+        --strip-components=1
+
+COPY entrypoint.py /entrypoint.py
 
 FROM debian:11.6-slim AS final
 
@@ -66,20 +72,18 @@ ENV HOME=/${USER}
 
 RUN useradd ${USER} --home-dir ${HOME}
 
-WORKDIR /tmp
-
-# Copy the downloaded binary from the verify stage
-COPY --from=verify /verify/dogecoin.tar.gz ./
-
-# Move downloaded binaries and man pages in the container system.
-# Setuid on binaries with $USER rights, to limit root usage.
-RUN tar -xvf dogecoin.tar.gz --strip-components=1 \
-    && cp bin/dogecoind bin/dogecoin-cli bin/dogecoin-tx /usr/local/bin/ \
-    && chown ${USER}:${USER} /usr/local/bin/dogecoin* \
-    && chmod 4555 /usr/local/bin/dogecoin* \
-    && rm -rf *
-
 WORKDIR ${HOME}
+# Copy the downloaded binaries and man pages into the container system from the verify stage.
+# Setuid on binaries with $USER rights, to limit root usage.
+COPY --from=verify --chown=${USER}:${USER} \
+    /verify/bin/dogecoind \
+    /verify/bin/dogecoin-cli \
+    /verify/bin/dogecoin-tx \
+    /entrypoint.py /usr/local/bin/
+
+# Set permissions on copied files
+RUN chmod 4555 /usr/local/bin/dogecoin* \
+    && chmod 500 /usr/local/bin/entrypoint.py
 
 # P2P network (mainnet, testnet & regnet respectively)
 EXPOSE 22556 44556 18444
@@ -93,9 +97,6 @@ VOLUME ["/dogecoin/.dogecoin"]
 RUN apt update && apt install --no-install-recommends -y \
     python3 \
     && rm -rf /var/lib/apt/lists/*
-
-COPY entrypoint.py /usr/local/bin/entrypoint.py
-RUN chmod 500 /usr/local/bin/entrypoint.py
 
 ENTRYPOINT ["entrypoint.py"]
 CMD ["dogecoind"]
