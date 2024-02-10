@@ -6,7 +6,7 @@ OLD_GID=$APP_GID
 . ./build.sh
 . ./run.sh
 sleep 5
-docker exec -it dogecoin dogecoin-cli --regtest getnetworkinfo
+docker exec -it dogecoin dogecoin-cli getnetworkinfo
 docker stop dogecoin
 echo "APP_UID:APP_GID=$APP_UID:$APP_GID (old or non-existent)"
 echo "APP_UID:APP_GID=$OLD_UID:$OLD_GID (new)"
