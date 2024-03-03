@@ -1,0 +1,5 @@
+#!/bin/bash
+
+pushd ./1.14.7/bullseye/
+./build.sh
+popd

@@ -1,0 +1,19 @@
+version: "3.8"
+
+name: dogecoin
+services:
+  dogecoin:
+    build: .
+    image: xanimo/dogecoin:1.14.6
+    volumes:
+    - dogecoin:/home/dogecoin/.dogecoin
+    env_file:
+      - .env
+
+volumes:
+  dogecoin:
+    driver: local
+    driver_opts:
+      o: bind
+      type: none
+      device: /mnt/volumes/.dogecoin

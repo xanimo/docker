@@ -19,7 +19,7 @@ class VersionTest(TestRunner):
     def add_options(self, parser):
         """Add test-specific --version option"""
         parser.add_argument("--version", dest="version", required=True,
-            help="The version that is expected to be installed, eg: '1.14.5'")
+            help="The version that is expected to be installed, eg: '1.14.7'")
 
     def run_test(self):
         """Check the version of each executable"""
