@@ -17,8 +17,9 @@ echo rpcuser=dogecoin >> dogecoin.conf
 echo $rpcauth >> dogecoin.conf
 echo rpcpassword=$rpcpassword >> dogecoin.conf
 echo harddustlimit=0.001 >> dogecoin.conf
-echo reindex=1
-echo txindex=1
+echo reindex=1 >> dogecoin.conf
+echo txindex=1 >> dogecoin.conf
+echo prune=2000 >> dogecoin.conf
 cat dogecoin.conf > .env
 
 docker build --no-cache --build-arg "APP_UID=$(id -u $USER)" --build-arg "APP_GID=$(id -g $USER)" --build-arg "USER=dogecoin" -t xanimo/dogecoin:1.14.7 .

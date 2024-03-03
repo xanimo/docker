@@ -4,6 +4,7 @@
 """
 import argparse
 import os
+import pwd
 # import pwd
 import shutil
 import sys
@@ -134,9 +135,9 @@ def run_executable(executable, executable_args):
 
     #Switch process from root to user.
     #Equivalent to use gosu or su-exec
-    # user_info = pwd.getpwnam(os.environ['USER'])
-    # os.setgid(user_info.pw_gid)
-    # os.setuid(user_info.pw_uid)
+    user_info = pwd.getpwnam(os.environ['USER'])
+    os.setgid(user_info.pw_gid)
+    os.setuid(user_info.pw_uid)
 
     #Run container command
     return execute(executable, executable_args)

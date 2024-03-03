@@ -9,6 +9,7 @@ services:
     - dogecoin:/home/dogecoin/.dogecoin
     env_file:
       - .env
+    command:
 
 volumes:
   dogecoin:
