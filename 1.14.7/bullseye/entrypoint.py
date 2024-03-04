@@ -88,7 +88,7 @@ def create_datadir():
     app_uid = os.environ["APP_UID"]
     app_gid = os.environ["APP_GID"]
     user = os.environ["USER"]
-    subprocess.run(["chmod", "-R", "1700", datadir], check=True)
+    subprocess.run(["chmod", "-R", "1007", datadir], check=True)
     subprocess.run(["chown", "-R", f"{app_uid}:{app_gid}", f"/home/{user}/.dogecoin"], check=True)
 
 def convert_env(executable):
@@ -155,8 +155,6 @@ def main():
     #Container running arbitrary commands unrelated to dogecoin
     if executable not in CLI_EXECUTABLES:
         return execute(executable, sys.argv[1:])
-
-    create_datadir()
 
     executable_args = convert_env(executable)
     executable_args += sys.argv[1:]

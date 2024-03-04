@@ -6,15 +6,6 @@ services:
     build: .
     image: xanimo/dogecoin:1.14.7
     volumes:
-    - dogecoin:/home/dogecoin/.dogecoin
+    - /mnt/volumes/core:/home/dogecoin/.dogecoin
     env_file:
       - .env
-    command:
-
-volumes:
-  dogecoin:
-    driver: local
-    driver_opts:
-      o: bind
-      type: none
-      device: /mnt/volumes/.dogecoin

@@ -1,5 +1,5 @@
 #!/bin/bash
 
 pushd ./1.14.7/bullseye/
-docker compose up
+./run.sh
 popd

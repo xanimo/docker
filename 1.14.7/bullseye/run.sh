@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [[ ! -d /mnt/volumes/.dogecoin ]]; then
-    mkdir -p /mnt/volumes/.dogecoin
+if [[ ! -d /mnt/volumes/core ]]; then
+    mkdir -p /mnt/volumes/core
 fi
 
 if docker inspect dogecoin | grep '"Status":' | grep "running"; then
