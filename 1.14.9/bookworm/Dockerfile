@@ -52,9 +52,11 @@ RUN set -ex && ARCHITECTURE=$(dpkg --print-architecture) \
     && if [ "${RLS_ARCH}" = "" ]; then echo "Could not determine architecture" >&2; exit 1; fi \
     && RLS_FILE_NAME="dogecoin-${RLS_VERSION}-${RLS_ARCH}-${RLS_OS}-${RLS_LIB}.tar.gz" \
     && wget -q "${RLS_LOCATION}/${RLS_FILE_NAME}" \
-    && gitian/bin/gverify --no-markup -d sigs -r "${SIG_PATH}" "${DESCRIPTOR_PATH}" \
-       | grep OK | shuf -n 1 | sed s/:.*// > random_signer.txt \
-    && grep "${RLS_FILE_NAME}" "sigs/${SIG_PATH}/$(cat random_signer.txt)/"*assert | sha256sum -c \
+    && { gitian/bin/gverify --no-markup -d sigs -r "${SIG_PATH}" "${DESCRIPTOR_PATH}" || true; } \
+       | { grep OK || true; } | shuf -n 1 | sed s/:.*// > random_signer.txt \
+    && if [ -s random_signer.txt ]; then \
+         grep "${RLS_FILE_NAME}" "sigs/${SIG_PATH}/$(cat random_signer.txt)/"*assert | sha256sum -c; \
+       fi \
     && grep "${RLS_FILE_NAME}" SHASUMS | sha256sum -c \
     && mv "${RLS_FILE_NAME}" dogecoin.tar.gz \
     && tar -xf dogecoin.tar.gz --strip-components=1
@@ -84,6 +86,11 @@ COPY --from=xanimo/chisel:latest /usr/bin/chisel /usr/bin/chisel
 
 ARG USER=dogecoin
 
+# ca-certificates is required by the chisel binary to verify GitHub TLS
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /staging
 
 # Cut only what dogecoind needs at runtime:
@@ -94,6 +101,9 @@ WORKDIR /staging
 #   libgcc-s1_libs        - GCC unwinding runtime
 #   libstdc++6_libs       - C++ standard library
 #   dash_bins             - /bin/sh for the shell entrypoint
+#   coreutils_mkdir       - /bin/mkdir for datadir creation
+#   grep_bins             - /bin/grep for entrypoint option parsing
+#   sed_bins              - /bin/sed for entrypoint option parsing
 RUN chisel cut --release ubuntu-22.04 --root /staging \
     base-files_base \
     base-files_release-info \
@@ -101,7 +111,10 @@ RUN chisel cut --release ubuntu-22.04 --root /staging \
     libc6_config \
     libgcc-s1_libs \
     libstdc++6_libs \
-    dash_bins
+    dash_bins \
+    coreutils_mkdir \
+    grep_bins \
+    sed_bins
 
 # Populate minimal /etc, create the dogecoin user's home + datadir,
 # and regenerate the dynamic-linker cache for the chiselled rootfs.

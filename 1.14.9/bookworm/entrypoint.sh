@@ -34,14 +34,14 @@ fi
 # Convert matching environment variables into CLI arguments, then unset them
 # so they are not passed a second time through the inherited environment.
 #
-# Mapping rule (mirrors the Python entrypoint):
+# Mapping rule (mirrors the Python entrypoint; sed y// replaces tr):
 #   -rpcuser       → RPCUSER
 #   -help-debug    → HELP_DEBUG
 ENV_ARGS=""
 while IFS= read -r line; do
     opt=$(printf '%s' "$line" | sed 's/^[[:space:]]*-//;s/[=<[:space:]].*//')
     [ -z "$opt" ] && continue
-    var=$(printf '%s' "$opt" | tr 'a-z-' 'A-Z_')
+    var=$(printf '%s' "$opt" | sed 'y/abcdefghijklmnopqrstuvwxyz-/ABCDEFGHIJKLMNOPQRSTUVWXYZ_/')
     # POSIX: ${VAR+y} expands to "y" if VAR is set (even when empty).
     eval "isset=\${${var}+y}"
     [ "$isset" != "y" ] && continue
