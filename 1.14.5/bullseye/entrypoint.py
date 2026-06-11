@@ -103,7 +103,8 @@ def convert_env(executable):
     corresponding option do not expect a value.
     """
     man_options = executable_options(executable)
-    option_to_env = lambda opt_value : opt_value.upper().replace("-", "_")
+    def option_to_env(opt_value):
+        return opt_value.upper().replace("-", "_")
 
     cli_arguments = []
     for option in man_options:
