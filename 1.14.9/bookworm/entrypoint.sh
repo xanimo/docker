@@ -44,6 +44,7 @@ while IFS= read -r line; do
     var=$(printf '%s' "$opt" | sed 'y/abcdefghijklmnopqrstuvwxyz-/ABCDEFGHIJKLMNOPQRSTUVWXYZ_/')
     # POSIX: ${VAR+y} expands to "y" if VAR is set (even when empty).
     eval "isset=\${${var}+y}"
+    # shellcheck disable=SC2154  # isset is assigned via the eval above
     [ "$isset" != "y" ] && continue
     eval "val=\${${var}}"
     unset "$var" 2>/dev/null || true

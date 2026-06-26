@@ -5,6 +5,7 @@ on:
     paths:
       - "**/Dockerfile"
       - "**/entrypoint.py"
+      - "**/entrypoint.sh"
       - "**/PLATFORMS"
       - "tests/**"
       - "tools/genmatrix.js"
