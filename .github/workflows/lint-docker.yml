@@ -21,13 +21,17 @@ jobs:
           echo "files=${files}" >> "$GITHUB_OUTPUT"
           echo "Linting: ${files}"
 
+      - name: Pull hadolint
+        run: docker pull hadolint/hadolint:v2.12.0
+
       - name: Run hadolint
+        env:
+          FILES: ${{ steps.find.outputs.files }}
         run: |
-          docker run --rm -i hadolint/hadolint:latest hadolint - < /dev/null || true
           rc=0
-          for f in ${{ steps.find.outputs.files }}; do
+          for f in $FILES; do
             echo "::group::hadolint ${f}"
-            if ! docker run --rm -i hadolint/hadolint:latest hadolint - < "${f}"; then
+            if ! docker run --rm -i hadolint/hadolint:v2.12.0 hadolint - < "${f}"; then
               rc=1
             fi
             echo "::endgroup::"
