@@ -102,45 +102,41 @@ WORKDIR /src
 RUN CGO_ENABLED=0 make bin/rootlesskit
 
 
-# Use the chisel binary from xanimo's fork to carve a minimal Ubuntu 22.04
-# rootfs into /staging, then populate it with the dogecoin binaries.
-FROM ubuntu:22.04 AS installer
+# Build minimal Debian-based rootfs; works on all Debian-supported arches
+# including linux/386 (which ubuntu:22.04 dropped).
+FROM debian:bookworm-slim AS installer
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-COPY --from=xanimo/chisel:latest /usr/bin/chisel /usr/bin/chisel
-
 ARG USER=dogecoin
-
-# ca-certificates is required by the chisel binary to verify GitHub TLS
-# hadolint ignore=DL3008
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /staging
 
-# Cut only what dogecoind needs at runtime:
-#   base-files_base       - directory skeleton (/etc, /tmp, /var, …)
-#   base-files_release-info - /etc/os-release
-#   libc6_libs            - glibc + dynamic linker
-#   libc6_config          - /etc/ld.so.conf.d for library discovery
-#   libgcc-s1_libs        - GCC unwinding runtime
-#   libstdc++6_libs       - C++ standard library
-#   dash_bins             - /bin/sh for the shell entrypoint
-#   coreutils_mkdir       - /bin/mkdir for datadir creation
-#   grep_bins             - /bin/grep for entrypoint option parsing
-#   sed_bins              - /bin/sed for entrypoint option parsing
-RUN chisel cut --release ubuntu-22.04 --root /staging \
-    base-files_base \
-    base-files_release-info \
-    libc6_libs \
-    libc6_config \
-    libgcc-s1_libs \
-    libstdc++6_libs \
-    dash_bins \
-    coreutils_mkdir \
-    grep_bins \
-    sed_bins
+# Install libstdc++6 (not in bookworm-slim), then copy exactly the files
+# owned by each needed runtime package into /staging. Explicit package list
+# avoids pulling in dpkg/tar/etc. via recursive dep resolution.
+# cp -a preserves symlinks and arch-specific library paths.
+# hadolint ignore=DL3008
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends libstdc++6 \
+    && for pkg in \
+         base-files \
+         libc6 libgcc-s1 libstdc++6 \
+         dash grep sed coreutils \
+         libpcre2-8-0 libacl1 libattr1 libselinux1 libsigsegv2 libgmp10; \
+       do \
+         dpkg -L "$pkg" 2>/dev/null | grep -v '^\.$' \
+           | while IFS= read -r f; do \
+               if [ -d "$f" ] && [ ! -L "$f" ]; then \
+                 mkdir -p "/staging$f"; \
+               elif [ -e "$f" ]; then \
+                 mkdir -p "/staging$(dirname "$f")"; \
+                 cp -a "$f" "/staging$f"; \
+               fi; \
+             done; \
+       done \
+    && ln -sf dash /staging/usr/bin/sh \
+    && rm -rf /var/lib/apt/lists/*
 
 # Populate minimal /etc, create the dogecoin user's home + datadir,
 # and regenerate the dynamic-linker cache for the chiselled rootfs.
