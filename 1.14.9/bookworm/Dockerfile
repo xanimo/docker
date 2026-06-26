@@ -88,20 +88,6 @@ RUN set -ex && ARCHITECTURE=$(dpkg --print-architecture) \
     && tar -xf dogecoin.tar.gz --strip-components=1
 
 
-# Build rootlesskit as a fully static binary (CGO_ENABLED=0) from xanimo's fork.
-# Enables optional user-namespace-based rootless execution inside the container,
-# solving the host UID-mapping problem for bind-mounted volumes without root.
-FROM golang:1.22-alpine AS rootlesskit
-
-SHELL ["/bin/ash", "-o", "pipefail", "-c"]
-
-# hadolint ignore=DL3018
-RUN apk add --no-cache git make \
-    && git clone --depth 1 https://github.com/xanimo/rootlesskit /src
-WORKDIR /src
-RUN CGO_ENABLED=0 make bin/rootlesskit
-
-
 # Build minimal Debian-based rootfs; works on all Debian-supported arches
 # including linux/386 (which ubuntu:22.04 dropped).
 FROM debian:bookworm-slim AS installer
@@ -139,9 +125,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Populate minimal /etc, create the dogecoin user's home + datadir,
-# and regenerate the dynamic-linker cache for the chiselled rootfs.
-# No setuid binary, no fixed-UID assumption beyond UID 1000:
-# operators using Docker rootless / rootlesskit get full UID remapping.
+# and regenerate the dynamic-linker cache for the assembled rootfs.
+# No setuid binary, no fixed-UID assumption beyond UID 1000: operators
+# can remap with Docker rootless mode or --user at runtime.
 RUN printf 'root:x:0:0:root:/root:/sbin/nologin\n%s:x:1000:1000::/%s:/sbin/nologin\n' \
         "${USER}" "${USER}" > /staging/etc/passwd \
     && printf 'root:x:0:\n%s:x:1000:\n' "${USER}" > /staging/etc/group \
@@ -162,12 +148,6 @@ COPY --from=verify \
     /staging/usr/local/bin/
 RUN chmod 0755 /staging/usr/local/bin/dogecoin* \
     && chown root:root /staging/usr/local/bin/dogecoin*
-
-# Include the static rootlesskit binary for operators who need user-namespace
-# UID remapping (e.g. `docker run … rootlesskit dogecoind`).
-COPY --from=rootlesskit /src/bin/rootlesskit /staging/usr/local/bin/rootlesskit
-RUN chmod 0755 /staging/usr/local/bin/rootlesskit \
-    && chown root:root /staging/usr/local/bin/rootlesskit
 
 # Install the shell entrypoint (replaces Python; no extra runtime dep).
 COPY entrypoint.sh /staging/usr/local/bin/entrypoint.sh

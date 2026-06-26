@@ -1,7 +1,7 @@
 #!/bin/sh
 # Entrypoint for Dogecoin Core — runs as dogecoin user (UID 1000), no root.
-# For host UID remapping with bind-mounted volumes, wrap with rootlesskit:
-#   docker run … rootlesskit dogecoind
+# For host UID remapping with bind-mounted volumes, use Docker rootless mode
+# or pass --user "$(id -u):$(id -g)" at runtime.
 set -e
 
 EXECUTABLES="dogecoind dogecoin-cli dogecoin-tx"
@@ -13,7 +13,7 @@ fi
 
 EXECUTABLE="$1"; shift
 
-# Pass arbitrary commands through directly (e.g. sh, dogecoin-cli, rootlesskit).
+# Pass arbitrary commands through directly (e.g. sh, dogecoin-cli, dogecoin-tx).
 case " $EXECUTABLES " in
     *" $EXECUTABLE "*) ;;
     *) exec "$EXECUTABLE" "$@" ;;
