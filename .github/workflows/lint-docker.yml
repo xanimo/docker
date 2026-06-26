@@ -1,0 +1,39 @@
+name: lint-docker
+
+on:
+  pull_request:
+    paths:
+      - "**/Dockerfile"
+      - ".github/workflows/lint-docker.yml"
+
+jobs:
+  hadolint:
+    name: hadolint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Find Dockerfiles
+        id: find
+        run: |
+          files=$(find . -name Dockerfile -not -path './.git/*' | sort | tr '\n' ' ')
+          echo "files=${files}" >> "$GITHUB_OUTPUT"
+          echo "Linting: ${files}"
+
+      - name: Pull hadolint
+        run: docker pull hadolint/hadolint:v2.12.0
+
+      - name: Run hadolint
+        env:
+          FILES: ${{ steps.find.outputs.files }}
+        run: |
+          rc=0
+          for f in $FILES; do
+            echo "::group::hadolint ${f}"
+            if ! docker run --rm -i hadolint/hadolint:v2.12.0 hadolint - < "${f}"; then
+              rc=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "${rc}"
