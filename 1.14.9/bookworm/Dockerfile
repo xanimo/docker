@@ -47,7 +47,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 RUN git clone --depth 1 "${REPO_GITIAN_BUILDER}" gitian \
     && git clone --depth 1 "${REPO_GITIAN_SIGS}" sigs \
     && git clone --depth 1 -b "v${RLS_VERSION}" "${REPO_DOGECOIN_CORE}" dogecoin \
-    && find dogecoin/contrib/gitian-keys -name "*.pgp" -print0 | xargs -0 -n 1 gpg --import
+    && find dogecoin/contrib/gitian-keys -name "*.pgp" -print0 | xargs -0 -n 1 gpg --import \
+    && wget -qO- https://github.com/KunNw0n.gpg | gpg --import \
+    && gpg --list-keys 7E453C9D37AC2EB246645C4B75055E4030051C37
 
 # determine architecture, download release binary, then verify it against a
 # trusted gitian signer (fail-closed unless ALLOW_UNTRUSTED_SIGNERS=1) and
