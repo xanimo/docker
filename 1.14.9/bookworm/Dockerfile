@@ -60,8 +60,8 @@ RUN set -ex && ARCHITECTURE=$(dpkg --print-architecture) \
     && if [ "${RLS_ARCH}" = "" ]; then echo "Could not determine architecture" >&2; exit 1; fi \
     && RLS_FILE_NAME="dogecoin-${RLS_VERSION}-${RLS_ARCH}-${RLS_OS}-${RLS_LIB}.tar.gz" \
     && wget -q "${RLS_LOCATION}/${RLS_FILE_NAME}" \
-    && gverify_out=$(gitian/bin/gverify --no-markup -d sigs -r "${SIG_PATH}" "${DESCRIPTOR_PATH}") \
-    && printf '%s\n' "${gverify_out}" | grep OK | sed s/:.*// | sort -u > ok_signers.txt || true \
+    && gitian/bin/gverify --no-markup -d sigs -r "${SIG_PATH}" "${DESCRIPTOR_PATH}" \
+       | grep OK | sed s/:.*// | sort -u > ok_signers.txt || true \
     && TRUSTED_SIGNER="" \
     && while read -r signer; do \
          [ -z "${signer}" ] && continue; \
