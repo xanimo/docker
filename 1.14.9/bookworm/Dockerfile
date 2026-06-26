@@ -150,6 +150,7 @@ RUN printf 'root:x:0:0:root:/root:/sbin/nologin\n%s:x:1000:1000::/%s:/sbin/nolog
     && chown -R 1000:1000 "/staging/${USER}" \
     && printf 'include /etc/ld.so.conf.d/*.conf\n/lib\n/usr/lib\n' \
         > /staging/etc/ld.so.conf \
+    && if [ -d /usr/lib64 ]; then cp -a /usr/lib64 /staging/usr/; fi \
     && ldconfig -r /staging
 
 # Install dogecoin binaries: owned by root, world-executable, no setuid bit.
