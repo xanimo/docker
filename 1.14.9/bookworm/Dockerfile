@@ -26,6 +26,13 @@ ARG SIG_PATH=${RLS_VERSION}-${RLS_OS}
 ARG DESCRIPTOR_PATH=dogecoin/contrib/gitian-descriptors/gitian-${RLS_OS}.yml
 ARG RLS_LOCATION=https://github.com/dogecoin/dogecoin/releases/download/v${RLS_VERSION}
 
+# Signature policy. By default the build FAILS if gverify finds no signer in
+# the imported keyring whose assert matches the downloaded binary. Releases
+# whose signers are not yet in contrib/gitian-keys can be built by setting
+# ALLOW_UNTRUSTED_SIGNERS=1, which downgrades the missing-signer case to a
+# warning. The pinned SHA256 check below is ALWAYS enforced regardless.
+ARG ALLOW_UNTRUSTED_SIGNERS=0
+
 # install system requirements
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install --no-install-recommends -y \
@@ -42,8 +49,9 @@ RUN git clone --depth 1 "${REPO_GITIAN_BUILDER}" gitian \
     && git clone --depth 1 -b "v${RLS_VERSION}" "${REPO_DOGECOIN_CORE}" dogecoin \
     && find dogecoin/contrib/gitian-keys -name "*.pgp" -print0 | xargs -0 -n 1 gpg --import
 
-# determine architecture, download release binary and verify against a
-# random OK signer and against pinned sha256sums
+# determine architecture, download release binary, then verify it against a
+# trusted gitian signer (fail-closed unless ALLOW_UNTRUSTED_SIGNERS=1) and
+# against the pinned sha256sums above
 RUN set -ex && ARCHITECTURE=$(dpkg --print-architecture) \
     && if [ "${ARCHITECTURE}" = "amd64" ]; then RLS_ARCH=x86_64;    fi \
     && if [ "${ARCHITECTURE}" = "arm64" ]; then RLS_ARCH=aarch64;   fi \
@@ -52,10 +60,26 @@ RUN set -ex && ARCHITECTURE=$(dpkg --print-architecture) \
     && if [ "${RLS_ARCH}" = "" ]; then echo "Could not determine architecture" >&2; exit 1; fi \
     && RLS_FILE_NAME="dogecoin-${RLS_VERSION}-${RLS_ARCH}-${RLS_OS}-${RLS_LIB}.tar.gz" \
     && wget -q "${RLS_LOCATION}/${RLS_FILE_NAME}" \
-    && { gitian/bin/gverify --no-markup -d sigs -r "${SIG_PATH}" "${DESCRIPTOR_PATH}" || true; } \
-       | { grep OK || true; } | shuf -n 1 | sed s/:.*// > random_signer.txt \
-    && if [ -s random_signer.txt ]; then \
-         grep "${RLS_FILE_NAME}" "sigs/${SIG_PATH}/$(cat random_signer.txt)/"*assert | sha256sum -c; \
+    && gitian/bin/gverify --no-markup -d sigs -r "${SIG_PATH}" "${DESCRIPTOR_PATH}" \
+       | grep OK | sed s/:.*// | sort -u > ok_signers.txt || true \
+    && TRUSTED_SIGNER="" \
+    && while read -r signer; do \
+         [ -z "${signer}" ] && continue; \
+         if grep -lq "${RLS_FILE_NAME}" "sigs/${SIG_PATH}/${signer}/"*assert 2>/dev/null; then \
+           TRUSTED_SIGNER="${signer}"; break; \
+         fi; \
+       done < ok_signers.txt \
+    && if [ -n "${TRUSTED_SIGNER}" ]; then \
+         echo "Verifying against trusted signer: ${TRUSTED_SIGNER}"; \
+         grep "${RLS_FILE_NAME}" "sigs/${SIG_PATH}/${TRUSTED_SIGNER}/"*assert | sha256sum -c; \
+       elif [ "${ALLOW_UNTRUSTED_SIGNERS}" = "1" ]; then \
+         echo "WARNING: no trusted signer for ${RLS_FILE_NAME} in keyring;" >&2; \
+         echo "WARNING: proceeding on pinned SHA256 only (ALLOW_UNTRUSTED_SIGNERS=1)." >&2; \
+       else \
+         echo "ERROR: no trusted gitian signer found for ${RLS_FILE_NAME}." >&2; \
+         echo "ERROR: import the release signer's key or set" >&2; \
+         echo "ERROR: --build-arg ALLOW_UNTRUSTED_SIGNERS=1 to override." >&2; \
+         exit 1; \
        fi \
     && grep "${RLS_FILE_NAME}" SHASUMS | sha256sum -c \
     && mv "${RLS_FILE_NAME}" dogecoin.tar.gz \
