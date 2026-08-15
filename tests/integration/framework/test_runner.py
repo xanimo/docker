@@ -25,7 +25,7 @@ class TestRunner:
         """Actual test, must be implemented by the final class"""
         raise NotImplementedError
 
-    def run_command(self, envs, args):
+    def run_command(self, envs, args, user=None, volumes=None):
         """Run a docker command with env and args"""
         assert self.options.platform is not None
         assert self.options.image is not None
@@ -33,7 +33,7 @@ class TestRunner:
         runner = DockerRunner(self.options.platform,
             self.options.image, self.options.verbose)
 
-        return runner.run_interactive_command(envs, args)
+        return runner.run_interactive_command(envs, args, user, volumes)
 
     def main(self):
         """main loop"""
