@@ -71,20 +71,28 @@ ENV DATADIR=/${USER}/.dogecoin
 # Root configuration to mimic user
 ENV HOME=/${USER}
 
-RUN useradd ${USER} --home-dir ${HOME}
+# Pin the uid. An unpinned useradd takes whatever is free, so a base image
+# change would silently move ownership of bind-mounted wallet files.
+RUN useradd ${USER} --uid 1000 --user-group --home-dir ${HOME}
 
 WORKDIR /tmp
 
 # Copy the downloaded binary from the verify stage
 COPY --from=verify /verify/dogecoin.tar.gz ./
 
-# Move downloaded binaries and man pages in the container system.
-# Setuid on binaries with $USER rights, to limit root usage.
+# Install the binaries root-owned and not setuid, so the unprivileged
+# runtime user can neither replace them nor escalate through them.
 RUN tar -xvf dogecoin.tar.gz --strip-components=1 \
     && cp bin/dogecoind bin/dogecoin-cli bin/dogecoin-tx /usr/local/bin/ \
-    && chown ${USER}:${USER} /usr/local/bin/dogecoin* \
-    && chmod 4555 /usr/local/bin/dogecoin* \
+    && chown root:root /usr/local/bin/dogecoin* \
+    && chmod 0555 /usr/local/bin/dogecoin* \
     && rm -rf -- *
+
+# Group-own the home and datadir by root(0) and grant group write, so an
+# operator overriding the uid (--user 1001:0) keeps write access.
+RUN mkdir -p ${DATADIR} \
+    && chown -R 1000:0 ${HOME} \
+    && chmod -R g+rwX ${HOME}
 
 WORKDIR ${HOME}
 
@@ -103,7 +111,13 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY entrypoint.py /usr/local/bin/entrypoint.py
-RUN chmod 500 /usr/local/bin/entrypoint.py
+# World-readable and executable: the entrypoint now runs as the
+# unprivileged user, so a root-only mode would make the image unstartable.
+RUN chmod 0555 /usr/local/bin/entrypoint.py
+
+# Numeric, so that runAsNonRoot admission can verify it without running
+# the image. Never root at runtime.
+USER 1000:1000
 
 ENTRYPOINT ["entrypoint.py"]
 CMD ["dogecoind"]
