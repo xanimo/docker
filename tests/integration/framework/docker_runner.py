@@ -16,11 +16,22 @@ class DockerRunner:
         self.image = image
         self.verbose = verbose
 
-    def construct_docker_command(self, envs, args):
+    def construct_docker_command(self, envs, args, user=None, volumes=None):
         """
         Construct a docker command with env and args
+
+        Optionally override the runtime user, as "uid:gid", and bind-mount
+        volumes given as "source:destination" strings.
         """
         command = ["docker", "run", "--platform", self.platform]
+
+        if user is not None:
+            command.append("--user")
+            command.append(user)
+
+        for volume in volumes or []:
+            command.append("-v")
+            command.append(volume)
 
         for env in envs:
             command.append("-e")
@@ -33,12 +44,12 @@ class DockerRunner:
 
         return command
 
-    def run_interactive_command(self, envs, args):
+    def run_interactive_command(self, envs, args, user=None, volumes=None):
         """
         Run our target docker image with a list of
         environment variables and a list of arguments
         """
-        command = self.construct_docker_command(envs, args)
+        command = self.construct_docker_command(envs, args, user, volumes)
 
         if self.verbose:
             print(f"Running command: { ' '.join(command) }")
