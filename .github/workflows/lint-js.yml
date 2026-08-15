@@ -10,6 +10,9 @@ on:
       - "**/*.js"
       - ".github/workflows/lint-js.yml"
 
+permissions:
+  contents: read
+
 jobs:
   lint-js:
     name: lint (javascript)
@@ -18,12 +21,16 @@ jobs:
     strategy:
       fail-fast: false
     steps:
-      - name: Install semistandard
-        run: |
-          npm install -g semistandard
-
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+
+      - name: Set up node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+
+      - name: Install semistandard
+        run: npm install -g semistandard
 
       - name: Run linter
-        run: find . -name "*.js" | xargs semistandard
+        run: find . -name "*.js" -exec semistandard {} +

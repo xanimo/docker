@@ -4,11 +4,16 @@ on:
   push:
     paths:
       - "**/*.py"
+      - "pylintrc.tests"
       - ".github/workflows/lint-py.yml"
   pull_request:
     paths:
       - "**/*.py"
+      - "pylintrc.tests"
       - ".github/workflows/lint-py.yml"
+
+permissions:
+  contents: read
 
 jobs:
   lint-py:
@@ -18,17 +23,24 @@ jobs:
     strategy:
       fail-fast: false
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Runner system python is externally managed (PEP 668), pip cannot
+      # install into it. Provision our own interpreter instead.
+      - name: Set up python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
       - name: Install pylint
         run: pip3 install pylint
 
-      - name: Checkout
-        uses: actions/checkout@v2
-
       - name: Run linter for images code
-        run: find . -name "*.py" ! -path "*/tests/*" | xargs pylint
+        run: find . -name "*.py" ! -path "*/tests/*" -exec pylint {} +
 
       - name: Install pylint dependencies for tests
         run: pip3 install pytest
 
       - name: Run linter for tests code
-        run: find "./tests" -name "*.py" | xargs pylint --rcfile=pylintrc.tests
+        run: find "./tests" -name "*.py" -exec pylint --rcfile=pylintrc.tests {} +
