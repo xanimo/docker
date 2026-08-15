@@ -4,7 +4,6 @@
 """
 import argparse
 import os
-import pwd
 import shutil
 import sys
 import subprocess
@@ -71,8 +70,10 @@ def create_datadir():
     """
     Create data directory used by dogecoin daemon.
 
-    Create manually the directory while root at container creation,
-    root rights needed to create folder with host volume.
+    Runs unprivileged and never chowns, so a bind-mounted host directory
+    keeps the ownership the operator gave it.
+
+    Returns True when the directory exists and is writable.
     """
     #Try to get datadir from argv
     parser = argparse.ArgumentParser(add_help=False)
@@ -82,10 +83,21 @@ def create_datadir():
     #Try to get datadir from environment
     datadir = argv.datadir or os.environ.get("DATADIR")
 
-    os.makedirs(datadir, exist_ok=True)
+    try:
+        os.makedirs(datadir, exist_ok=True)
+    except OSError as err:
+        print(f"{sys.argv[0]}: cannot create datadir {datadir}: {err}",
+                file=sys.stderr)
+        return False
 
-    user = os.environ["USER"]
-    subprocess.run(["chown", "-R", f"{user}:{user}", datadir], check=True)
+    #An existing bind mount may belong to another uid entirely.
+    if not os.access(datadir, os.W_OK):
+        print(f"{sys.argv[0]}: datadir {datadir} is not writable by uid "
+                f"{os.getuid()}. Bind-mount a directory you own, or run "
+                "with --user $(id -u):$(id -g).", file=sys.stderr)
+        return False
+
+    return True
 
 def convert_env(executable):
     """
@@ -120,21 +132,16 @@ def convert_env(executable):
 def run_executable(executable, executable_args):
     """
     Run selected dogecoin executable with arguments from environment and
-    command line. Switch manually from root rights needed at startup
-    to unprivileged user.
+    command line.
 
-    Manually execve + setuid/setgid to run process as pid 1,
-    to manage a single process in a container & more predictive
-    signal handling.
+    The container already runs as an unprivileged user, so there is no
+    privilege left to drop here.
+
+    Manually execve to run process as pid 1, to manage a single process
+    in a container & more predictive signal handling.
     """
     if executable == "dogecoind":
         executable_args.append("-printtoconsole")
-
-    #Switch process from root to user.
-    #Equivalent to use gosu or su-exec
-    user_info = pwd.getpwnam(os.environ['USER'])
-    os.setgid(user_info.pw_gid)
-    os.setuid(user_info.pw_uid)
 
     #Run container command
     return execute(executable, executable_args)
@@ -152,7 +159,8 @@ def main():
     if executable not in CLI_EXECUTABLES:
         return execute(executable, sys.argv[1:])
 
-    create_datadir()
+    if not create_datadir():
+        return 1
 
     executable_args = convert_env(executable)
     executable_args += sys.argv[1:]
