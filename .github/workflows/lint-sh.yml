@@ -1,0 +1,38 @@
+name: lint-sh
+
+on:
+  push:
+    paths:
+      - "**/*.sh"
+      - ".github/workflows/lint-sh.yml"
+  pull_request:
+    paths:
+      - "**/*.sh"
+      - ".github/workflows/lint-sh.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  lint-sh:
+    name: lint (shell)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # No-op while the tree has no shell scripts; present so that adding one
+      # cannot land unlinted.
+      - name: Run shellcheck
+        run: |
+          mapfile -t scripts < <(find . -name "*.sh")
+          if [ "${#scripts[@]}" -eq 0 ]; then
+            echo "No shell scripts to lint."
+            exit 0
+          fi
+          docker run --rm -v "${PWD}:/mnt" -w /mnt \
+            koalaman/shellcheck:v0.9.0 "${scripts[@]}"
+        shell: bash
