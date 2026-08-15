@@ -1,0 +1,3 @@
+[images-configuration]
+disable =   duplicate-code  # each version ships a self-contained entrypoint,
+                            # see #16 and #40 on templatization

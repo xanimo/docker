@@ -37,7 +37,7 @@ jobs:
         run: pip3 install pylint
 
       - name: Run linter for images code
-        run: find . -name "*.py" ! -path "*/tests/*" -exec pylint {} +
+        run: find . -name "*.py" ! -path "*/tests/*" -exec pylint --rcfile=pylintrc.images {} +
 
       - name: Install pylint dependencies for tests
         run: pip3 install pytest
