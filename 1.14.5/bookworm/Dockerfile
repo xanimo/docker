@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim AS verify
+FROM debian:bookworm-slim AS verify
 
 WORKDIR /verify
 
@@ -63,7 +63,7 @@ RUN ARCHITECTURE=$(dpkg --print-architecture) \
     && grep "${RLS_FILE_NAME}" SHASUMS | sha256sum -c \
     && mv "${RLS_FILE_NAME}" dogecoin.tar.gz
 
-FROM debian:bullseye-slim AS final
+FROM debian:bookworm-slim AS final
 
 ENV USER=dogecoin
 ENV DATADIR=/${USER}/.dogecoin
